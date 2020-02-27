@@ -82,3 +82,20 @@ def deprocess_image(x):
     x = x[:, :, ::-1]
     x = np.clip(x, 0, 255).astype('uint8')
     return x
+
+
+# get tensor representations of our images
+base_image = K.variable(preprocess_image(base_image_path))
+style_reference_iamge = K.variable(preprocess_image(style_reference_image_path))
+
+# this will contain our generated image
+if K.image_data_format() == 'channels_first':
+    combination_image = K.placeholder(1, 3, img_nrows, img_ncols)
+else:
+    combination_image = K.placeholder((1, img_nrows, img_ncols, 3))
+
+# combine the 3 images into a single Keras tensor
+input_tensor = K.concatenate([base_image, style_reference_iamge, combination_image], axis=0)
+
+# build the VGG19 network with our 3 images as input
+# the model will be loaded with pre-trained ImageNet weight
