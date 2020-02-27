@@ -24,12 +24,13 @@ from keras.preprocessing.image import load_img
 from keras_preprocessing.image import img_to_array
 
 parse = argparse.ArgumentParser(description="Neural style transfert with Keras")
-parse.add_argument('base_image_path', metavar='base', type=str,
+parse.add_argument('base_image_path', metavar='base', type=str,default='data/IMG_7271.png',
                    help='path to the image to transform')
-parse.add_argument('style_reference_image_path', metavar='ref', type=str,
+parse.add_argument('style_reference_image_path', metavar='ref', type=str,default='data/Screenshot.png',
                    help='path to the style reference image')
-parse.add_argument('result_fix', metavar='res_prefix', type=str,
+parse.add_argument('result_fix', metavar='res_prefix', type=str,default='data/result_fix.png',
                    help='prefix for the saved results')
+
 parse.add_argument('--iter', type=int, default=10, required=False,
                    help='number of iterations to run')
 parse.add_argument('--content_weight', type=float, default=0.025, required=False,
@@ -40,17 +41,25 @@ parse.add_argument('--tv_weight', type=float, default=1.0, required=False,
                    help='total variation weight')
 args = parse.parse_args()
 base_image_path = args.base_image_path
-style_reference_image_path = args.base_image_path
-result_predix = args.style_reference_image_path
+print(base_image_path, type(base_image_path))
+base_image_path = base_image_path[5:]
+style_reference_image_path = args.style_reference_image_path
+style_reference_image_path = style_reference_image_path[25:]
+result_predix = args.result_fix
+
+# base_image_path='data/IMG_7271.png'
+# style_reference_image_path='data/Screenshot.png'
+# result_predix='data/result_fix.png'
 iterations = args.iter
 
 # these are the weight of different loss components
 total_variable_weight = args.tv_weight
-style_weight = args.style_weiht
+style_weight = args.style_weight
 content_weight = args.content_weight
 
 # dimensions of the generated pictre
-width, height = load_img(base_image_path)
+img = load_img(base_image_path)
+width, height = img.width, img.height
 img_nrows = 400
 img_ncols = int(width * img_nrows / height)
 
@@ -99,3 +108,5 @@ input_tensor = K.concatenate([base_image, style_reference_iamge, combination_ima
 
 # build the VGG19 network with our 3 images as input
 # the model will be loaded with pre-trained ImageNet weight
+model = vgg19.VGG19(input_tensor=input_tensor, weights='imagenet', include_top=False)
+print('Model loaded.')

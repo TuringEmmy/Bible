@@ -101,7 +101,7 @@ def unet_model(input_img, n_filters=16, droput=0.1, batchnorm=True):
 
 
 if __name__ == '__main__':
-    image = cv2.imread('data/IMG_7271.JPG')
+    image = cv2.imread('data/IMG_7271.png')
     input_img = tf.convert_to_tensor(image,dtype=tf.float32,name='inputs_image')
     print(type(input_img))
     unet_model(input_img)
