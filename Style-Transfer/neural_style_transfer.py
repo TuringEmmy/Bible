@@ -9,7 +9,7 @@
 # @Contact   : 微信号：csy_lgy 微信公众号：码龙社 CSDN：https://me.csdn.net/sinat_26745777 知乎：https://www.zhihu.com/people/TuringEmmy
 # @Project  : Bible-neural_style_transfer
 # endregion
-
+# reference linnk:https://github.com/keras-team/keras/blob/master/examples/neural_style_transfer.py
 
 from __future__ import absolute_import
 from __future__ import division
