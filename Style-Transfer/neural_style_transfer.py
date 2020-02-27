@@ -24,11 +24,11 @@ from keras.preprocessing.image import load_img
 from keras_preprocessing.image import img_to_array
 
 parse = argparse.ArgumentParser(description="Neural style transfert with Keras")
-parse.add_argument('base_image_path', metavar='base', type=str,default='data/IMG_7271.png',
+parse.add_argument('base_image_path', metavar='base', type=str, default='data/IMG_7271.png',
                    help='path to the image to transform')
-parse.add_argument('style_reference_image_path', metavar='ref', type=str,default='data/Screenshot.png',
+parse.add_argument('style_reference_image_path', metavar='ref', type=str, default='data/Screenshot.png',
                    help='path to the style reference image')
-parse.add_argument('result_fix', metavar='res_prefix', type=str,default='data/result_fix.png',
+parse.add_argument('result_fix', metavar='res_prefix', type=str, default='data/result_fix.png',
                    help='prefix for the saved results')
 
 parse.add_argument('--iter', type=int, default=10, required=False,
@@ -110,3 +110,22 @@ input_tensor = K.concatenate([base_image, style_reference_iamge, combination_ima
 # the model will be loaded with pre-trained ImageNet weight
 model = vgg19.VGG19(input_tensor=input_tensor, weights='imagenet', include_top=False)
 print('Model loaded.')
+
+# get the symbolic outputs of each "key" layer(we gave them unique names)
+outputs_dict = dict([(layer.nmae, layer.output) for layer in model.layers])
+
+
+# compute the neural style loss
+# first we need  to define 4 util function
+
+# the gram matrix of an image tensor (feature-wise outter product)
+
+def gram_matrix(x):
+    assert K.ndim(x) == 3
+    if K.image_data_format() == "channel_first":
+        features = K.batch_flatten(x)
+    else:
+        features = K.batch_flatten(K.permute_dimensions(x, (2, 0, 1)))
+
+    gram = K.dot(features, K.transpose(features))
+    return gram
