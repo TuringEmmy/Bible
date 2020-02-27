@@ -14,3 +14,71 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+import argparse
+
+import numpy as np
+from keras import backend as K
+from keras.applications import vgg19
+from keras.preprocessing.image import load_img
+from keras_preprocessing.image import img_to_array
+
+parse = argparse.ArgumentParser(description="Neural style transfert with Keras")
+parse.add_argument('base_image_path', metavar='base', type=str,
+                   help='path to the image to transform')
+parse.add_argument('style_reference_image_path', metavar='ref', type=str,
+                   help='path to the style reference image')
+parse.add_argument('result_fix', metavar='res_prefix', type=str,
+                   help='prefix for the saved results')
+parse.add_argument('--iter', type=int, default=10, required=False,
+                   help='number of iterations to run')
+parse.add_argument('--content_weight', type=float, default=0.025, required=False,
+                   help='content weight')
+parse.add_argument('--style_weight', type=float, default=1.0, required=False,
+                   help='style weight')
+parse.add_argument('--tv_weight', type=float, default=1.0, required=False,
+                   help='total variation weight')
+args = parse.parse_args()
+base_image_path = args.base_image_path
+style_reference_image_path = args.base_image_path
+result_predix = args.style_reference_image_path
+iterations = args.iter
+
+# these are the weight of different loss components
+total_variable_weight = args.tv_weight
+style_weight = args.style_weiht
+content_weight = args.content_weight
+
+# dimensions of the generated pictre
+width, height = load_img(base_image_path)
+img_nrows = 400
+img_ncols = int(width * img_nrows / height)
+
+
+# util function to open, resize and format picture into appropriate tensor
+
+def preprocess_image(image_path):
+    img = load_img(image_path, target_size=(img_nrows, img_ncols))
+    img = img_to_array(img)
+    img = np.expand_dims(img, axis=0)
+    img = vgg19.preprocess_input(img)
+    return img
+
+
+# util function to convert a tensor into a valid image
+def deprocess_image(x):
+    if K.image_data_format() == "channels_first":
+        x = x.reshape((3, img_ncols, img_ncols))
+        x = x.transpose((1, 2, 0))
+    else:
+        x = x.reshape((img_nrows, img_ncols, 3))
+
+    # remove zero center by mean pixel
+    x[:, :, 0] += 103.939
+    x[:, :, 1] += 116.779
+    x[:, :, 2] += 123.68
+
+    # BGR-->RGB
+    x = x[:, :, ::-1]
+    x = np.clip(x, 0, 255).astype('uint8')
+    return x
