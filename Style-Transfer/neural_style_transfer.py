@@ -16,12 +16,14 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import time
 
 import numpy as np
 from keras import backend as K
 from keras.applications import vgg19
-from keras.preprocessing.image import load_img
+from keras.preprocessing.image import load_img, save_img
 from keras_preprocessing.image import img_to_array
+from scipy.optimize import fmin_l_bfgs_b
 
 parse = argparse.ArgumentParser(description="Neural style transfert with Keras")
 parse.add_argument('base_image_path', metavar='base', type=str, default='data/IMG_7271.png',
@@ -184,3 +186,70 @@ for layer_name in feature_layers:
 loss += total_variable_weight + total_variation_loss(combination_image)
 
 # get the gradients of the generated image wrt the loss
+grads = K.gradients(loss, combination_image)
+outputs = [loss]
+if isinstance(grads, (list, tuple)):
+    outputs += grads
+else:
+    outputs.append(grads)
+
+f_outputs = K.function([combination_image], outputs)
+
+
+def eval_loss_and_grads(x):
+    if K.image_data_format() == 'channels_first':
+        x = x.reshape((1, 3, img_nrows, img_ncols))
+    else:
+        x = x.reshape((1, img_nrows, img_ncols))
+    outs = f_outputs([x])
+    loss_value = outs[0]
+    if len(outs[1:]) == 1:
+        grad_values = outs[1].flatten().astype('float64')
+    else:
+        grad_values = np.array(outs[1:]).flatten().astype('float64')
+
+    return loss_value, grad_values
+
+
+# this evaluator class makes it possible to compute loss and gradient in one pass
+# while retrieving them via two separate function, "loss"and "grads". This is done because scity optimize requests
+# separate functions for loss and gradients, but computing them separately would be inefficient
+class Evaluartor(object):
+    def __init__(self):
+        self.loss_value = None
+        self.grads_values = None
+
+    def loss(self, x):
+        assert self.loss_value is None
+        loss_value, grad_values = eval_loss_and_grads(x)
+        self.loss_value = loss
+        self.grads_values = grad_values
+        return self.loss_value
+
+    def grads(self, x):
+        assert self.loss_value is not None
+        grad_values = np.copy(self.grads_values)
+        self.loss_value = None
+        self.grads_values = None
+        return grad_values
+
+
+evaluator = Evaluartor()
+
+# run scipy based optimization(L-BFGS) over the pixels of the generated image
+# so as to minimize the neural style loss
+x = preprocess_image(base_image_path)
+for i in range(iterations):
+    print("start of iteration", i)
+    start_time = time.time()
+    x, min_val, info = fmin_l_bfgs_b(evaluator.loss, x.flatten(),
+                                     fprime=evaluator.grads, maxfun=20)
+    print("current loss value:", min_val)
+    # save current generated image
+
+    img = deprocess_image(x.copy())
+    fname = result_predix + '_at_iteration_%d.png' % i
+    save_img(fname, img)
+    end_time = time.time()
+    print("image saved as", fname)
+    print('iteration %d completed in %s' % (i, end_time - start_time))
