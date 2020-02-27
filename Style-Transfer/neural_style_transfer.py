@@ -129,3 +129,17 @@ def gram_matrix(x):
 
     gram = K.dot(features, K.transpose(features))
     return gram
+
+
+# the style loss is designed to maintain
+# the style of the reference image in the generagted image
+# it is based on the gram matrices (which capture style) of and  from the generated image
+
+def style_loss(style, combination):
+    assert K.ndim(style) == 3
+    assert K.ndim(combination) == 3
+    S = gram_matrix(style)
+    C = gram_matrix(combination)
+    channels = 3
+    size = img_nrows * img_ncols
+    return K.sum(K.square(S - C)) / (4 * (channels ** 2) * (size ** 2))
