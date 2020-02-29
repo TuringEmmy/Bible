@@ -58,7 +58,7 @@ def binary_tanh(x):
     return 2 * round_through(_hard_sigmod(x)) - 1
 
 
-def binary(W, H=1):
+def binarize(W, H=1):
     """
     二值化操作
     将[-H,H]之间的值转换为-H或者H

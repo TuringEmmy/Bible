@@ -105,7 +105,7 @@ class BinaryConv2D(Conv2D):
 
     def __init__(self, filters, kernel_lr_multiplier='Glorot',
                  bias_lr_multiplier=None, H=1, **kwargs):
-        super(self, BinaryConv2D).__init__(filters, **kwargs)
+        super(BinaryConv2D,self).__init__(filters, **kwargs)
         self.H = H
         self.kernel_lr_multiplier = kernel_lr_multiplier
         self.bias_lr_multiplier = bias_lr_multiplier
@@ -131,7 +131,7 @@ class BinaryConv2D(Conv2D):
         self.kernel_constraint = Clip(-self.H, self.H)
         self.kernel_initializer = initializers.RandomUniform(-self.H, self.H)
         self.kernel = self.add_weight(shape=kernel_shape,
-                                      initializer=initializers,
+                                      initializer=self.kernel_initializer,
                                       name="kernel",
                                       regularizer=self.kernel_regularizer,
                                       constraint=self.kernel_constraint)
@@ -139,7 +139,7 @@ class BinaryConv2D(Conv2D):
         if self.use_bias:
             self.lr_multipliers = [self.kernel_lr_multiplier, self.bias_lr_multiplier]
             self.bias = self.add_weight((self.out_dim,),
-                                        initializer=initializers,
+                                        initializer=self.initializers,
                                         name='kernel',
                                         regularizer=self.kernel_regularizer,
                                         constraint=self.kernel_constraint)
@@ -152,10 +152,10 @@ class BinaryConv2D(Conv2D):
         self.build = True
 
     def call(self, inputs):
-        bunary_kernel = binarize(self.kernel, H=self.H)
+        binary_kernel = binarize(self.kernel, H=self.H)
         outputs = K.conv2d(
             inputs,
-            bunary_kernel,
+            binary_kernel,
             strides=self.strides,
             padding=self.padding,
             data_format=self.data_format,
