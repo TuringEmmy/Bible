@@ -43,7 +43,7 @@ class BinaryDense(Dense):
     二值化全链接层
     """
 
-    def __init__(self, uints, H=1, kernel_lr_multiplier='Glorot', bias_lrmultiplier=None, **kwargs):
+    def __init__(self, uints, H=1., kernel_lr_multiplier='Glorot', bias_lrmultiplier=None, **kwargs):
         super(BinaryDense, self).__init__(uints, **kwargs)
         self.H = H
         self.kernel_lr_multiplier = kernel_lr_multiplier
@@ -73,7 +73,7 @@ class BinaryDense(Dense):
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint0)
+                                        constraint=self.bias_constraint)
 
         else:
             self.lr_multiplier = [self.kernel_lr_multiplier]
@@ -119,7 +119,7 @@ class BinaryConv2D(Conv2D):
             raise ValueError('The channel dimension of the inputs should be defined. Found '"None"'')
 
         input_dim = input_shape[channel_axis]
-        kernel_shape = self.kernel_size = (input_dim, self.filters)
+        kernel_shape = self.kernel_size + (input_dim, self.filters)
 
         base = self.kernel_size[0] * self.kernel_size[1]
         if self.H == 'Glorot':
