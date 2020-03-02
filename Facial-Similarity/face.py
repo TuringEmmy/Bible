@@ -20,7 +20,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from siamese_model import SiameseNetworkDataset, SiameseNetwork, ContrastiveLoss
+from siamese_model import SiameseNetworkDataset, SiameseNetwork, ContrastiveLoss, SiameseNetwork1
 
 
 def imshow(img, text=None, should_save=False):
@@ -44,8 +44,8 @@ class Config():
     """
     train_dir = "data/training"
     testing_dir = "data/testing"
-    train_batch_size = 4
-    train_number_epochs = 100
+    train_batch_size = 64
+    train_number_epochs = 10
 
 
 # using image folder dataset
@@ -58,19 +58,19 @@ siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset,
 # the top row and the bottom row of any column is one pair. The 0s and 1s correspond to the column of
 # th eimage. 1 indiciates dissimilar, and 0 in dicates similar.
 vis_dataloader = DataLoader(siamese_dataset, shuffle=True,
-                            num_workers=2, batch_size=8)
+                            num_workers=8, batch_size=8)
 dataiter = iter(vis_dataloader)
 
-example_batch = next(dataiter)
+example_batch = next(dataiter)  # 读图片
 concatenated = torch.cat((example_batch[0], example_batch[1]), 0)
 # imshow(torchvision.utils.make_grid(concatenated))
-print(example_batch[2].numpy())
+# print(example_batch[2].numpy())
 
 # train time
 train_dataloader = DataLoader(siamese_dataset, shuffle=True,
-                              num_workers=2, batch_size=Config.train_batch_size)
+                              num_workers=6, batch_size=Config.train_batch_size)
 # net = SiameseNetwork().cuda()
-net = SiameseNetwork()
+net = SiameseNetwork1()
 criterion = ContrastiveLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.0005)
 counter = []
@@ -79,7 +79,8 @@ iteration_number = 0
 
 for epoch in range(0, Config.train_number_epochs):
     for i, data in enumerate(train_dataloader, 0):
-        img0, img1, label = data
+        print(len(data),data)
+        img0, img1, label= data
         # img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
         optimizer.zero_grad()
         output1, output2 = net(img0, img1)
@@ -90,6 +91,8 @@ for epoch in range(0, Config.train_number_epochs):
             print('epoch number {}\n current loss {}\n'.format(epoch, loss_contrastive.item()))
             iteration_number += 10
             counter.append(iteration_number)
-            loss_history.append(loss_contrastive)
+            loss_history.append(loss_contrastive.item())
 
 show_plot(counter, loss_history)
+# save model
+torch.save(net.state_dict(), 'best.ph')

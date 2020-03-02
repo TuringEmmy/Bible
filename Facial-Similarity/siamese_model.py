@@ -20,6 +20,8 @@ import numpy as np
 from torch.nn import Module, Sequential, ReflectionPad2d, Conv2d, ReLU, BatchNorm2d, Linear
 from torch.nn import functional as F
 
+from torch import nn
+
 
 class SiameseNetworkDataset(Dataset):
     """
@@ -53,6 +55,7 @@ class SiameseNetworkDataset(Dataset):
 
         img0 = Image.open(img0_tuple[0])
         img1 = Image.open(img1_tuple[0])
+        # 转换成黑白
         img0 = img0.convert("L")
         img1 = img1.convert("L")
 
@@ -64,7 +67,7 @@ class SiameseNetworkDataset(Dataset):
             img0 = self.transform(img0)
             img1 = self.transform(img1)
 
-        result = torch.from_numpy(np.array([int(img1_tuple[1] != img0_tuple[1])], dtype=np.float32))
+        result = torch.from_numpy(np.array([int(img1_tuple[1] != img0_tuple[1])], dtype=np.float32))  # tensor
         return img0, img1, result
 
     def __len__(self):
@@ -113,6 +116,48 @@ class SiameseNetwork(Module):
             return output1, output2
 
 
+class SiameseNetwork1(nn.Module):
+    def __init__(self):
+        super(SiameseNetwork1, self).__init__()
+        self.cnn1 = nn.Sequential(
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(1, 4, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(4),
+
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(4, 8, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(8),
+
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(8, 8, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(8),
+
+        )
+
+        self.fc1 = nn.Sequential(
+            nn.Linear(8 * 100 * 100, 500),
+            nn.ReLU(inplace=True),
+
+            nn.Linear(500, 500),
+            nn.ReLU(inplace=True),
+
+            nn.Linear(500, 5))
+
+    def forward_once(self, x):
+        output = self.cnn1(x)
+        output = output.view(output.size()[0], -1)
+        output = self.fc1(output)
+        return output
+
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1)
+        output2 = self.forward_once(input2)
+        return output1, output2
+
+
 class ContrastiveLoss(Module):
     """
     based on: https://yan.lecun.com/exdb/publis/hadsell-chopra-lecun-06.pdf
@@ -124,7 +169,7 @@ class ContrastiveLoss(Module):
         self.margin = margin
 
     def forward(self, outputs1, outputs2, label):
-        euclidean_distance = F.pairwise_distance(outputs1, outputs2, keepdim=True, )
+        euclidean_distance = F.pairwise_distance(outputs1, outputs2, keepdim=True)
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) + (label) * torch.pow(
             torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
         return loss_contrastive
