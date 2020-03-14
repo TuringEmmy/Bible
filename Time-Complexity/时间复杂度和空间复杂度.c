@@ -56,3 +56,14 @@ X:O(n log n) > Y:o(n^2)
 
 //定理：if X的时间复杂度要由于y的时间复杂度，那么，假设存在一个足够大的数M，
 //当n>M时，我么可以保证X的实际效率要由于Y的实际效率
+
+
+C * O(N) if only if C跟N没有相关性
+O(1)
+O(log n)  tree heap binary serach
+O(n)
+O(n log n)    quicksort  heapost
+O(n^2)
+O(n^3)
+O(2^n)
+O(3^n)
