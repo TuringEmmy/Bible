@@ -22,4 +22,10 @@
 /BinaryNeuralNetwork/MNIST/
 /Facial-Similarity/data/
 /Facial-Similarity/best.ph
+<<<<<<< HEAD
 /.idea/*
+=======
+/DecisionTree/data/
+.DS_Store
+.idea/*
+>>>>>>> dev
